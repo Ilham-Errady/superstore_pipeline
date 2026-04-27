@@ -1,0 +1,9 @@
+def load_to_ml():
+    df = pd.read_csv("../clean/cleaned_avito_data.csv")
+    ml_df = df[['price', 'city_district', 'surface', 'rooms']] 
+    
+    with engine.connect() as conn:
+        conn.execute("CREATE SCHEMA IF NOT EXISTS ml_schema;")
+        
+    ml_df.to_sql('training_data', engine, schema='ml_schema', if_exists='replace')
+    print("Données d'entraînement prêtes dans le schéma ml_schema.")
