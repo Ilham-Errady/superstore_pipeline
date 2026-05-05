@@ -6,24 +6,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def create_warehouse_structure():
+    conn = None
+    cur = None
     try:
-        # الاتصال بقاعدة البيانات باستعمال المتغيرات من .env
+    
         conn = psycopg2.connect(
-            host="localhost",
+            host=os.getenv("DB_HOST", "localhost"),
             port="5432",
-            database=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD")
+            database=os.getenv("DB_NAME"), 
+            user=os.getenv("DB_USER"),     
+            password=os.getenv("DB_PASSWORD") 
         )
         cur = conn.cursor()
 
-        # الكود الكامل لتصميم المستودع (BI & ML)
         sql_commands = """
-        -- 1. كاري السكيمات
+        -- 1. creations des tables (Schemas)
         CREATE SCHEMA IF NOT EXISTS bi_schema;
         CREATE SCHEMA IF NOT EXISTS ml_schema;
 
-        -- 2. جداول BI Schema (Star Schema)
+        -- 2. les tables BI Schema (Star Schema)
         CREATE TABLE IF NOT EXISTS bi_schema.dim_localisation (
             loc_id SERIAL PRIMARY KEY,
             city VARCHAR(100)
@@ -43,7 +44,7 @@ def create_warehouse_structure():
             price_per_m2 FLOAT
         );
 
-        -- 3. جدول ML Schema (One Big Table)
+        -- 3.  les tables ML Schema (One Big Table)
         CREATE TABLE IF NOT EXISTS ml_schema.obt_avito_dataset (
             id SERIAL PRIMARY KEY,
             city VARCHAR(100),
@@ -54,16 +55,22 @@ def create_warehouse_structure():
         );
         """
         
+        print(f"🔄 Creating database structure in: {os.getenv('DB_NAME')}...")
         cur.execute(sql_commands)
         conn.commit()
-        print(f"✅ Warehouse structure created in '{os.getenv('DB_NAME')}' (Schemas: BI & ML)")
+        print(f"✅Success! BI and ML schemas are now ready.")
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error during connection or execution: {e}")
+        if conn:
+            conn.rollback()
     
     finally:
-        if 'cur' in locals(): cur.close()
-        if 'conn' in locals(): conn.close()
+
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     create_warehouse_structure()
